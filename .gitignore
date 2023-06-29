@@ -1,0 +1,9 @@
+
+# Pyre type checker
+.pyre/
+
+donut-base-sroie/
+
+lightning_logs/
+donut-save-hf/
+.idea/
