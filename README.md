@@ -10,5 +10,5 @@ Our academic paper, which describes our method in detail and provides full exper
 OCR-free Document Understanding Transformer.
 Geewook Kim, Teakgyu Hong, Moonbin Yim, JeongYeon Nam, Jinyoung Park, Jinyeong Yim, Wonseok Hwang, Sangdoo Yun, Dongyoon Han, Seunghyun Park. In ECCV 2022.
 
-![img.png](misc/img.png)image
+![img.png](misc/img.png)
 
