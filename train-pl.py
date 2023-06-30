@@ -190,7 +190,6 @@ class DonutModelPLModule(pl.LightningModule):
                                       num_beams=1,
                                       bad_words_ids=[[self.processor.tokenizer.unk_token_id]],
                                       return_dict_in_generate=True, )
-
         predictions = []
         for seq in self.processor.tokenizer.batch_decode(outputs.sequences):
             seq = seq.replace(self.processor.tokenizer.eos_token, "").replace(self.processor.tokenizer.pad_token, "")
@@ -266,18 +265,21 @@ class DonutModelPLModule(pl.LightningModule):
 
 
 class PushToHubCallback(Callback):
+    best_val_metric = 100
     def on_train_epoch_end(self, trainer, pl_module):
         print(f"Pushing model to the hub, epoch {trainer.current_epoch}")
         # pl_module.model.push_to_hub("nielsr/donut-demo",
         #                             commit_message=f"Training in progress, epoch {trainer.current_epoch}")
-
-        model_save_path = f"./donut-save-hf/epoch_{trainer.current_epoch}_ned_{trainer.callback_metrics['val_metric']}"
-        if not os.path.exists(model_save_path):
-            os.makedirs(model_save_path)
-        pl_module.processor.save_pretrained(model_save_path,
+        if trainer.callback_metrics['val_metric'] < self.best_val_metric:
+            print(f"save current best model: epoch_{trainer.current_epoch}_ned_{trainer.callback_metrics['val_metric']}")
+            model_save_path = f"./donut-save-hf/epoch_{trainer.current_epoch}_ned_{trainer.callback_metrics['val_metric']}"
+            if not os.path.exists(model_save_path):
+                os.makedirs(model_save_path)
+            pl_module.processor.save_pretrained(model_save_path,
+                                                commit_message=f"Training in progress, epoch {trainer.current_epoch}")
+            pl_module.model.save_pretrained(model_save_path,
                                             commit_message=f"Training in progress, epoch {trainer.current_epoch}")
-        pl_module.model.save_pretrained(model_save_path,
-                                        commit_message=f"Training in progress, epoch {trainer.current_epoch}")
+            self.best_val_metric = trainer.callback_metrics['val_metric']
 
     def on_train_end(self, trainer, pl_module):
         print(f"Pushing model to the hub after training")
@@ -413,7 +415,7 @@ if __name__ == "__main__":
         # logger=wandb_logger,
         callbacks=[
             PushToHubCallback(),  # hf model save to local
-            EarlyStopping(monitor="val_metric", patience=3, mode="min")
+            EarlyStopping(monitor="val_metric", patience=10, mode="min")
         ],
     )
 
