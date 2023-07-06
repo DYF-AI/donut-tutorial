@@ -303,12 +303,10 @@ if __name__ == "__main__":
     # validation_dataset = Dataset.from_file(os.path.join(DP, "parquet-validation.arrow"))
     # dataset = DatasetDict({"train": train_dataset, "test": test_dataset, "validation": validation_dataset})
 
+    MP = "/mnt/j/model/pretrained-model/torch/donut-base"
     max_length = 768
     image_size = [960, 720]  # [1280, 960]
-
-    # step1: get the data.arrow from generate_metadata.py and generate_arrowdata.py
-    dataset_path = "/mnt/j/dataset/document-intelligence/ICDAR-2019-SROIE-master/data/img/data.arrow"
-    MP = "/mnt/j/model/pretrained-model/torch/donut-base"
+    added_tokens = []
 
     # step2: config and model from huggingface
     # update image_size of the encoder
@@ -328,14 +326,8 @@ if __name__ == "__main__":
     processor.image_processor.size = image_size[::-1]  # should be (width, height)
     processor.image_processor.do_align_long_axis = False
 
-    added_tokens = []
-    model.config.pad_token_id = processor.tokenizer.pad_token_id
-    model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(['<s_cord-v2>'])[0]
-
-    # sanity check
-    print("Pad token ID:", processor.decode([model.config.pad_token_id]))
-    print("Decoder start token ID:", processor.decode([model.config.decoder_start_token_id]))
-
+    # step1: get the data.arrow from generate_metadata.py and generate_arrowdata.py
+    dataset_path = "/mnt/j/dataset/document-intelligence/ICDAR-2019-SROIE-master/data/img/data.arrow"
     # step3: load dataset
     from datasets import Dataset, DatasetDict
 
@@ -355,6 +347,7 @@ if __name__ == "__main__":
     #                            )
 
     # load local dataset
+    # 需要将processor前
     train_dataset = DonutDataset(dataset["train"], max_length=max_length,
                                  split="train", task_start_token="<s_cord-v2>", prompt_end_token="<s_cord-v2>",
                                  sort_json_key=False,  # cord dataset is preprocessed, so no need for this
@@ -364,6 +357,14 @@ if __name__ == "__main__":
                                split="validation", task_start_token="<s_cord-v2>", prompt_end_token="<s_cord-v2>",
                                sort_json_key=False,  # cord dataset is preprocessed, so no need for this
                                )
+
+    model.config.pad_token_id = processor.tokenizer.pad_token_id
+    model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(['<s_cord-v2>'])[0]
+
+    # sanity check
+    print("Pad token ID:", processor.decode([model.config.pad_token_id]))
+    print("Decoder start token ID:", processor.decode([model.config.decoder_start_token_id]))
+
     # feel free to increase the batch size if you have a lot of memory
     # I'm fine-tuning on Colab and given the large image size, batch size > 1 is not feasible
     # dataloader for pytorch_lightning

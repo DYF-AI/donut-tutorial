@@ -11,9 +11,9 @@ from datasets import Dataset, DatasetDict
 transformers.logging.disable_default_handler()
 
 # MP1 = "/mnt/j/model/pretrained-model/torch/donut-base"
-MP1 = "./donut-save-hf/epoch_25_ned_0.044291585714809414"
+MP1 = "./donut-save-hf/epoch_5_ned_0.07718016385447421"
 # MP2 = "./donut-base-sroie/checkpoint-11000"
-MP2 = "./donut-save-hf/epoch_25_ned_0.044291585714809414"
+MP2 = "./donut-save-hf/epoch_5_ned_0.07718016385447421"
 
 # Load our model from Hugging Face
 processor = DonutProcessor.from_pretrained(MP1)
