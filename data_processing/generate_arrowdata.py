@@ -8,6 +8,8 @@ from datasets import load_dataset
 from datasets.arrow_writer import ArrowWriter
 from datasets import Dataset, DatasetDict
 
+from image_utils import load_image
+
 dataset_features = datasets.Features(
     {
         "id": datasets.Value("string"),
@@ -16,16 +18,16 @@ dataset_features = datasets.Features(
     }
 )
 
-def load_image(image_path:str, size=None):
-    image = Image.open(image_path).convert("RGB")
-    w, h = image.size
-    if size is not None:
-        # resize image
-        image = image.resize((size, size))
-        image = np.asarray(image)
-        image = image[:, :, ::-1]  # flip color channels from RGB to BGR
-        image = image.transpose(2, 0, 1)  # move channels to first dimension
-    return image, (w, h)
+# def load_image(image_path:str, size=None):
+#     image = Image.open(image_path).convert("RGB")
+#     w, h = image.size
+#     if size is not None:
+#         # resize image
+#         image = image.resize((size, size))
+#         image = np.asarray(image)
+#         image = image[:, :, ::-1]  # flip color channels from RGB to BGR
+#         image = image.transpose(2, 0, 1)  # move channels to first dimension
+#     return image, (w, h)
 
 def generate_example(metadata_path:str, image_path:str):
     with open(metadata_path, "r", encoding="utf-8") as f:

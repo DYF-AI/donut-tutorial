@@ -11,19 +11,17 @@ from datasets import Dataset, DatasetDict
 transformers.logging.disable_default_handler()
 
 # MP1 = "/mnt/j/model/pretrained-model/torch/donut-base"
-MP1 = "./donut-save-hf/epoch_5_ned_0.07718016385447421"
-# MP2 = "./donut-base-sroie/checkpoint-11000"
-MP2 = "./donut-save-hf/epoch_5_ned_0.07718016385447421"
+MP = "./donut-save-hf/epoch_0_ned_0.22559996275727548"
 
 # Load our model from Hugging Face
-processor = DonutProcessor.from_pretrained(MP1)
-model = VisionEncoderDecoderModel.from_pretrained(MP2)
+processor = DonutProcessor.from_pretrained(MP)
+model = VisionEncoderDecoderModel.from_pretrained(MP)
 
 
 
 dataset_path = "/mnt/j/dataset/document-intelligence/ICDAR-2019-SROIE-master/data/img/data.arrow"
 dataset = Dataset.from_file(dataset_path)
-dataset = dataset.train_test_split(test_size=0.1)
+dataset = dataset.train_test_split(test_size=0.1, seed=42)
 
 # ==============================================
 from transformers import VisionEncoderDecoderConfig
@@ -37,20 +35,12 @@ processor.image_processor.do_align_long_axis = False
 
 # update image_size of the encoder
 # during pre-training, a larger image size was used
-config = VisionEncoderDecoderConfig.from_pretrained(MP1)
+config = VisionEncoderDecoderConfig.from_pretrained(MP)
 config.encoder.image_size = image_size  # (height, width)
 # update max_length of the decoder (for generation)
 config.decoder.max_length = max_length
 # TODO we should actually update max_position_embeddings and interpolate the pre-trained ones:
 # https://github.com/clovaai/donut/blob/0acc65a85d140852b8d9928565f0f6b2d98dc088/donut/model.py#L602
-# %% md
-
-# ================================================
-from transformers import DonutProcessor, VisionEncoderDecoderModel, BartConfig
-
-# processor = DonutProcessor.from_pretrained("nielsr/donut-base")
-# model = VisionEncoderDecoderModel.from_pretrained("nielsr/donut-base", config=config)
-
 
 import json
 import random
@@ -212,7 +202,7 @@ val_dataset = DonutDataset(dataset["test"], max_length=768,
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
-
+model.eval()
 test_sample = val_dataset[0]
 
 def run_prediction(test_sample, model=model, processor=processor):
