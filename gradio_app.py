@@ -24,6 +24,7 @@ if __name__ == "__main__":
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
+    print(f"model:{model}")
 
     # prompt
     token_prompt = "<s_cord-v2>"
@@ -47,7 +48,8 @@ if __name__ == "__main__":
                                  return_dict_in_generate=True
                                  )
         prediction = processor.batch_decode(outputs.sequences)[0]
-        return str(processor.token2json(prediction))
+        #return str(processor.token2json(prediction))
+        return processor.token2json(prediction)
 
 
     # test
@@ -61,7 +63,7 @@ if __name__ == "__main__":
     if run_gradio:
         demo = gr.Interface(fn=predict,
                             inputs=gr.inputs.Image(type="pil"),
-                            outputs=gr.outputs.Label(num_top_classes=1),
+                            outputs="json",
                             examples=[[image_path]]
                             )
         demo.launch()
