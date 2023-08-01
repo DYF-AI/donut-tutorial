@@ -205,31 +205,11 @@ class DonutModelPLModule(pl.LightningModule):
             scores.append(edit_distance(pred, answer) / max(len(pred), len(answer)))
 
             if self.config.get("verbose", False) and len(scores) == 1:
-                print(f"\nPrediction: {pred}")
-                print(f"    Answer: {answer}")
+                print(f"\nPrediction: {processor.token2json(pred)}")
+                print(f"    Answer: {processor.token2json(answer)}")
                 print(f" Normed ED: {scores[0]}")
         self.validation_step_outputs.append(scores)
         return scores
-
-    # pytorch_lightning < 2.0.0
-    # def validation_epoch_end(self, validation_step_outputs):
-    #     # I set this to 1 manually
-    #     # (previously set to len(self.config.dataset_name_or_paths))
-    #     num_of_loaders = 1
-    #     if num_of_loaders == 1:
-    #         validation_step_outputs = [validation_step_outputs]
-    #     assert len(validation_step_outputs) == num_of_loaders
-    #     cnt = [0] * num_of_loaders
-    #     total_metric = [0] * num_of_loaders
-    #     val_metric = [0] * num_of_loaders
-    #     for i, results in enumerate(validation_step_outputs):
-    #         for scores in results:
-    #             cnt[i] += len(scores)
-    #             total_metric[i] += np.sum(scores)
-    #         val_metric[i] = total_metric[i] / cnt[i]
-    #         val_metric_name = f"val_metric_{i}th_dataset"
-    #         self.log_dict({val_metric_name: val_metric[i]}, sync_dist=True)
-    #     self.log_dict({"val_metric": np.sum(total_metric) / np.sum(cnt)}, sync_dist=True)
 
     def on_validation_epoch_end(self):
         # I set this to 1 manually
@@ -297,12 +277,7 @@ class PushToHubCallback(Callback):
 
 
 if __name__ == "__main__":
-    # DP = r"C:\Users\21702\.cache\huggingface\datasets\naver-clova-ix___parquet\naver-clova-ix--cord-v2-c97f979311033a44\0.0.0\2a3b91fbd88a2c90d1dbbb32b460cf621d31bd5b05b934492fdef7d8d6f236ec"
-    # train_dataset = Dataset.from_file(os.path.join(DP, "parquet-train.arrow"))
-    # test_dataset = Dataset.from_file(os.path.join(DP, "parquet-test.arrow"))
-    # validation_dataset = Dataset.from_file(os.path.join(DP, "parquet-validation.arrow"))
-    # dataset = DatasetDict({"train": train_dataset, "test": test_dataset, "validation": validation_dataset})
-
+    from datasets import Dataset, DatasetDict
     MP = "/mnt/j/model/pretrained-model/torch/donut-base"
     max_length = 768
     image_size = [960, 720]  # [1280, 960]
@@ -327,13 +302,19 @@ if __name__ == "__main__":
     processor.image_processor.do_align_long_axis = False
 
     # step1: get the data.arrow from generate_metadata.py and generate_arrowdata.py
-    dataset_path = "/mnt/j/dataset/document-intelligence/ICDAR-2019-SROIE-master/data/img/data.arrow"
-    # step3: load dataset
-    from datasets import Dataset, DatasetDict
+    # ============ sroie ============
+    # dataset_path = "/mnt/j/dataset/document-intelligence/ICDAR-2019-SROIE-master/data/img/data.arrow"
+    # # step3: load dataset
+    # dataset = Dataset.from_file(dataset_path)
+    # dataset = dataset.train_test_split(test_size=0.1)
+    # print(dataset)
 
-    dataset = Dataset.from_file(dataset_path)
-    dataset = dataset.train_test_split(test_size=0.1)
-    print(dataset)
+    # ============ ticket ============
+    train_arrow_data = "/mnt/j/dataset/document-intelligence/EATEN数据集/dataset_trainticket/train/hcp_aug_2/train.arrow"
+    train_dataset = Dataset.from_file(train_arrow_data)
+    test_arrow_data = "/mnt/j/dataset/document-intelligence/EATEN数据集/dataset_trainticket/test/test.arrow"
+    test_dataset = Dataset.from_file(test_arrow_data)
+    dataset = DatasetDict({"train": train_dataset, "test":test_dataset})
 
     # load online dataset
     # train_dataset = DonutDataset("naver-clova-ix/cord-v2", max_length=max_length,
@@ -374,19 +355,9 @@ if __name__ == "__main__":
     pixel_values, labels, target_sequences = batch
     print("pixel_values:", pixel_values.shape)
 
-    # for id in labels.squeeze().tolist()[:30]:
-    #     if id != -100:
-    #         print(processor.decode([id]))
-    #     else:
-    #         print(id)
-    #
-    # batch = next(iter(val_dataloader))
-    # pixel_values, labels, target_sequences = batch
-    # print(pixel_values.shape)
-
     # step4: Pl module config
     config = {"max_epochs": 25,
-              "val_check_interval": 0.2,  # how many times we want to validate during an epoch
+              "val_check_interval": 1.0,  # how many times we want to validate during an epoch
               "check_val_every_n_epoch": 1,
               "gradient_clip_val": 1.0,
               "num_training_samples_per_epoch": 800,

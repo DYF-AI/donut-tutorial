@@ -33,7 +33,7 @@ if __name__ == "__main__":
                                             return_tensors="pt").input_ids.to(device)
     print(f"decoder_input_ids:{decoder_input_ids}")
 
-
+    model.eval()
     def predict(input_image):
         pixel_values = processor.image_processor(input_image, return_tensors="pt").pixel_values.to(device)
         outputs = model.generate(pixel_values=pixel_values,
